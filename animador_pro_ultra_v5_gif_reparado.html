@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Animador PRO Ultra v5 - GIF Reparado</title>
+  <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0b0b0b;color:#fff;text-align:center;padding:16px}
+    h1{margin:8px 0 16px}
+    .wrap{max-width:1100px;margin:0 auto}
+    .stage{background:#121212;border:2px solid #2c2c2c;border-radius:18px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    canvas{max-width:100%;height:auto;border-radius:12px;border:1px solid #333;background:#000;display:block;margin:0 auto}
+    .controls{margin:12px 0;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;align-items:center}
+    select,button,input{padding:10px 12px;border-radius:10px;border:none;font-size:14px}
+    select,input{background:#1d1d1d;color:#fff}
+    button{background:#ff0055;color:#fff;cursor:pointer;font-weight:700}
+    button:hover{filter:brightness(1.08)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    label{font-size:14px;color:#ddd}
+    .status{min-height:24px;font-size:14px;color:#9fe6b8;margin-top:8px}
+    .small{font-size:12px;color:#bdbdbd}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎬 Animador PRO Ultra v5 - GIF Reparado</h1>
+  <div class="stage">
+    <input type="file" id="upload" accept="image/*">
+
+    <div class="controls">
+      <select id="mode">
+        <option value="waveV">🌊 Bandera Vertical</option>
+        <option value="waveH">🌊 Bandera Horizontal</option>
+        <option value="rotate">🔄 Rotación</option>
+        <option value="zoom">🔍 Zoom</option>
+        <option value="float">☁️ Flotar</option>
+        <option value="parallax">🧠 Parallax</option>
+        <option value="elastic">🌀 Elástico</option>
+        <option value="shake">⚡ Vibración</option>
+        <option value="pulse">💓 Pulso</option>
+        <option value="tilt">🎮 Inclinación</option>
+      </select>
+    </div>
+
+    <canvas id="canvas" width="900" height="600"></canvas>
+
+    <div class="controls">
+      <label>Velocidad <input type="range" id="speed" min="0.2" max="5" step="0.1" value="1.2"></label>
+      <label>Intensidad <input type="range" id="intensity" min="1" max="80" value="18"></label>
+      <label>Duración GIF <input type="range" id="gifSeconds" min="2" max="6" step="1" value="3"></label>
+      <span id="gifSecondsValue">3 s</span>
+    </div>
+
+    <div class="controls">
+      <button id="btnImage" type="button">📸 Descargar Imagen</button>
+      <button id="btnGif" type="button">🎬 Descargar GIF</button>
+    </div>
+
+    <div class="status" id="status">Carga una imagen para comenzar.</div>
+    <div class="small">Versión reparada: usa otro motor de GIF para evitar el error de descarga.</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const upload = document.getElementById('upload');
+const modeEl = document.getElementById('mode');
+const speedEl = document.getElementById('speed');
+const intensityEl = document.getElementById('intensity');
+const gifSecondsEl = document.getElementById('gifSeconds');
+const gifSecondsValue = document.getElementById('gifSecondsValue');
+const btnImage = document.getElementById('btnImage');
+const btnGif = document.getElementById('btnGif');
+const statusEl = document.getElementById('status');
+
+const img = new Image();
+let imageLoaded = false;
+let animationStarted = false;
+let t = 0;
+let blobUrl = null;
+let lastTs = 0;
+
+function setStatus(text, error=false){
+  statusEl.textContent = text;
+  statusEl.style.color = error ? '#ff9a9a' : '#9fe6b8';
+}
+
+gifSecondsEl.addEventListener('input', ()=>{
+  gifSecondsValue.textContent = gifSecondsEl.value + ' s';
+});
+
+upload.addEventListener('change', (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+
+  if(blobUrl) URL.revokeObjectURL(blobUrl);
+  blobUrl = URL.createObjectURL(file);
+  imageLoaded = false;
+  setStatus('Cargando imagen...');
+  img.src = blobUrl;
+});
+
+img.onload = ()=>{
+  imageLoaded = true;
+  fitCanvasToImage(img.width, img.height);
+  t = 0;
+  lastTs = 0;
+  setStatus('Imagen cargada. Ya puedes descargar.');
+  if(!animationStarted){
+    animationStarted = true;
+    requestAnimationFrame(loop);
+  }
+};
+
+img.onerror = ()=>{
+  setStatus('No se pudo cargar la imagen.', true);
+};
+
+function fitCanvasToImage(w, h){
+  const maxW = Math.min(window.innerWidth - 40, 1100);
+  const maxH = Math.min(window.innerHeight * 0.62, 800);
+  const scale = Math.min(maxW / w, maxH / h, 1);
+  canvas.width = Math.max(2, Math.round(w * scale));
+  canvas.height = Math.max(2, Math.round(h * scale));
+}
+
+window.addEventListener('resize', ()=>{
+  if(imageLoaded) fitCanvasToImage(img.width, img.height);
+});
+
+function clearStage(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawBaseCentered(offsetX=0, offsetY=0, scaleX=1, scaleY=1, rotation=0, skewX=0, skewY=0){
+  ctx.save();
+  ctx.translate(canvas.width / 2 + offsetX, canvas.height / 2 + offsetY);
+  if(rotation) ctx.rotate(rotation);
+  if(skewX || skewY) ctx.transform(1, skewY, skewX, 1, 0, 0);
+  ctx.scale(scaleX, scaleY);
+  ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+function renderFrame(advanceSeconds){
+  if(!imageLoaded) return;
+  const speed = parseFloat(speedEl.value);
+  const intensity = parseFloat(intensityEl.value);
+  const mode = modeEl.value;
+
+  if(typeof advanceSeconds === 'number'){
+    t += advanceSeconds * speed * 3.0;
+  }
+
+  clearStage();
+
+  if(mode === 'waveV'){
+    for(let x = 0; x < canvas.width; x++){
+      const offsetY = Math.sin(x * 0.035 + t) * intensity;
+      ctx.drawImage(
+        img,
+        x / canvas.width * img.width, 0,
+        Math.max(1, img.width / canvas.width), img.height,
+        x, offsetY, 1, canvas.height
+      );
+    }
+    return;
+  }
+
+  if(mode === 'waveH'){
+    for(let y = 0; y < canvas.height; y++){
+      const offsetX = Math.sin(y * 0.035 + t) * intensity;
+      ctx.drawImage(
+        img,
+        0, y / canvas.height * img.height,
+        img.width, Math.max(1, img.height / canvas.height),
+        offsetX, y, canvas.width, 1
+      );
+    }
+    return;
+  }
+
+  if(mode === 'rotate'){
+    drawBaseCentered(0, 0, 1, 1, Math.sin(t) * 0.28);
+    return;
+  }
+  if(mode === 'zoom'){
+    const s = 1 + Math.sin(t) * 0.12;
+    drawBaseCentered(0, 0, s, s);
+    return;
+  }
+  if(mode === 'float'){
+    drawBaseCentered(0, Math.sin(t) * Math.min(intensity, 30));
+    return;
+  }
+  if(mode === 'parallax'){
+    drawBaseCentered(Math.sin(t) * intensity * 0.7, Math.cos(t * 0.85) * intensity * 0.5, 1.04, 1.04);
+    return;
+  }
+  if(mode === 'elastic'){
+    const sx = 1 + Math.sin(t) * 0.12;
+    const sy = 1 - Math.sin(t) * 0.08;
+    drawBaseCentered(0, 0, sx, sy);
+    return;
+  }
+  if(mode === 'shake'){
+    const ox = Math.sin(t * 18) * intensity * 0.18;
+    const oy = Math.cos(t * 16) * intensity * 0.18;
+    drawBaseCentered(ox, oy);
+    return;
+  }
+  if(mode === 'pulse'){
+    const s = 1 + Math.sin(t) * 0.08;
+    drawBaseCentered(0, 0, s, s);
+    return;
+  }
+  if(mode === 'tilt'){
+    const skew = Math.sin(t) * 0.12;
+    drawBaseCentered(0, 0, 1, 1, 0, skew, skew * 0.4);
+    return;
+  }
+
+  drawBaseCentered();
+}
+
+function loop(ts){
+  if(!lastTs) lastTs = ts;
+  const delta = (ts - lastTs) / 1000;
+  lastTs = ts;
+  renderFrame(delta);
+  requestAnimationFrame(loop);
+}
+
+btnImage.addEventListener('click', ()=>{
+  if(!imageLoaded){
+    setStatus('Primero carga una imagen.', true);
+    return;
+  }
+  const link = document.createElement('a');
+  link.download = 'imagen_animada.png';
+  link.href = canvas.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setStatus('Imagen descargada.');
+});
+
+btnGif.addEventListener('click', ()=>{
+  if(!imageLoaded){
+    setStatus('Primero carga una imagen.', true);
+    return;
+  }
+  if(typeof gifshot === 'undefined'){
+    setStatus('No cargó la librería del GIF. Reabre el archivo con internet activado.', true);
+    return;
+  }
+
+  btnGif.disabled = true;
+  btnImage.disabled = true;
+  setStatus('Generando GIF...');
+
+  try{
+    const seconds = parseInt(gifSecondsEl.value, 10);
+    const fps = 12;
+    const totalFrames = seconds * fps;
+    const step = 1 / fps;
+
+    const originalT = t;
+    const frames = [];
+
+    for(let i = 0; i < totalFrames; i++){
+      renderFrame(step);
+      frames.push(canvas.toDataURL('image/png'));
+    }
+
+    t = originalT;
+
+    gifshot.createGIF({
+      images: frames,
+      gifWidth: canvas.width,
+      gifHeight: canvas.height,
+      interval: step,
+      numFrames: totalFrames,
+      sampleInterval: 10
+    }, function(obj) {
+      btnGif.disabled = false;
+      btnImage.disabled = false;
+
+      if(!obj || obj.error || !obj.image){
+        setStatus('Error al crear el GIF. Baja la duración o la intensidad.', true);
+        return;
+      }
+
+      const a = document.createElement('a');
+      a.href = obj.image;
+      a.download = 'animacion.gif';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      setStatus('GIF descargado correctamente.');
+    });
+  }catch(err){
+    console.error(err);
+    btnGif.disabled = false;
+    btnImage.disabled = false;
+    setStatus('Ocurrió un error al generar el GIF.', true);
+  }
+});
+</script>
+</body>
+</html>
