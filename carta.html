@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carta - Restaurante Delicia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+        .menu-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .menu-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+        .category-btn.active { background-color: #991b1b; color: white; border-color: #991b1b; }
+    </style>
+</head>
+<body class="bg-stone-50">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+            <div class="px-8 py-6 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-red-800 rounded-2xl flex items-center justify-center text-white text-3xl">🍷</div>
+                    <div>
+                        <h1 class="heading-font text-3xl font-bold text-stone-900">Delicia</h1>
+                        <p class="text-sm text-stone-500 -mt-1">Restaurante &amp; Bistró</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-8">
+                    <nav class="flex gap-8 text-sm font-medium">
+                        <a href="#" onclick="showSection('menu')" class="hover:text-red-700 transition-colors active">Menú</a>
+                        <a href="#" onclick="showSection('cart')" class="hover:text-red-700 transition-colors flex items-center gap-2">
+                            Carrito
+                            <span id="cart-count" class="bg-red-700 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                        </a>
+                    </nav>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="text-xs text-stone-500">Mesa</p>
+                            <p id="table-number" class="font-semibold text-lg text-stone-900">12</p>
+                        </div>
+                        <button onclick="submitOrder()" 
+                                class="bg-red-700 hover:bg-red-800 text-white px-8 py-3.5 rounded-2xl font-medium flex items-center gap-3 transition-all active:scale-95">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            Enviar Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="p-8">
+            <!-- Menu Section -->
+            <div id="menu-section" class="block">
+                <!-- Categories -->
+                <div class="flex gap-2 mb-10 overflow-x-auto pb-4 hide-scroll">
+                    <button onclick="filterCategory(this)" data-category="all" 
+                            class="category-btn active px-8 py-3 rounded-3xl text-sm font-medium border border-stone-200 whitespace-nowrap">Todos</button>
+                    <button onclick="filterCategory(this)" data-category="entradas" 
+                            class="category-btn px-8 py-3 rounded-3xl text-sm font-medium border border-stone-200 whitespace-nowrap">Entradas</button>
+                    <button onclick="filterCategory(this)" data-category="principales" 
+                            class="category-btn px-8 py-3 rounded-3xl text-sm font-medium border border-stone-200 whitespace-nowrap">Platos Principales</button>
+                    <button onclick="filterCategory(this)" data-category="postres" 
+                            class="category-btn px-8 py-3 rounded-3xl text-sm font-medium border border-stone-200 whitespace-nowrap">Postres</button>
+                    <button onclick="filterCategory(this)" data-category="bebidas" 
+                            class="category-btn px-8 py-3 rounded-3xl text-sm font-medium border border-stone-200 whitespace-nowrap">Bebidas</button>
+                </div>
+
+                <!-- Menu Grid -->
+                <div id="menu-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Cart Section -->
+            <div id="cart-section" class="hidden">
+                <div class="max-w-2xl mx-auto">
+                    <h2 class="heading-font text-4xl font-semibold mb-8">Tu Pedido</h2>
+                    <div id="cart-items" class="space-y-6 mb-12">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div class="bg-white rounded-3xl p-8 shadow">
+                        <div class="flex justify-between items-center text-lg mb-6">
+                            <span class="font-medium">Total</span>
+                            <span id="cart-total" class="font-semibold text-3xl">$0.00</span>
+                        </div>
+                        <button onclick="submitOrder()" 
+                                class="w-full bg-red-700 hover:bg-red-800 text-white py-6 rounded-2xl text-lg font-semibold transition-all">
+                            Confirmar y Enviar a Cocina
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Cart Button -->
+    <button onclick="toggleCart()" 
+            class="fixed bottom-8 right-8 bg-white shadow-xl border border-stone-100 w-16 h-16 rounded-3xl flex items-center justify-center text-3xl hover:scale-110 transition-transform z-50">
+        🛒
+    </button>
+
+    <script>
+        // Menu Data
+        let menuItems = [
+            {
+                id: 1,
+                name: "Bruschetta Clásica",
+                category: "entradas",
+                price: 8900,
+                desc: "Pan tostado con tomate fresco, albahaca y aceite de oliva extra virgen",
+                img: "https://picsum.photos/id/201/600/400"
+            },
+            {
+                id: 2,
+                name: "Carpaccio de Res",
+                category: "entradas",
+                price: 14900,
+                desc: "Finas láminas de res con rúcula, queso parmesano y alcaparras",
+                img: "https://picsum.photos/id/292/600/400"
+            },
+            {
+                id: 3,
+                name: "Risotto de Champiñones",
+                category: "principales",
+                price: 22900,
+                desc: "Arroz arborio cremoso con champiñones porcini y queso parmesano",
+                img: "https://picsum.photos/id/431/600/400"
+            },
+            {
+                id: 4,
+                name: "Filete de Salmón",
+                category: "principales",
+                price: 28900,
+                desc: "Salmón noruego a la plancha con salsa de eneldo y espárragos",
+                img: "https://picsum.photos/id/870/600/400"
+            },
+            {
+                id: 5,
+                name: "Tiramisú",
+                category: "postres",
+                price: 7900,
+                desc: "Clásico italiano con café, mascarpone y cacao",
+                img: "https://picsum.photos/id/1080/600/400"
+            },
+            {
+                id: 6,
+                name: "Cheesecake de Frutos Rojos",
+                category: "postres",
+                price: 8900,
+                desc: "Base de galleta con crema de queso y coulis de frutos rojos",
+                img: "https://picsum.photos/id/1083/600/400"
+            },
+            {
+                id: 7,
+                name: "Vino Malbec Reserva",
+                category: "bebidas",
+                price: 18500,
+                desc: "Copa de Malbec argentino seleccionado",
+                img: "https://picsum.photos/id/1060/600/400"
+            },
+            {
+                id: 8,
+                name: "Limonada Fresca",
+                category: "bebidas",
+                price: 5900,
+                desc: "Limonada natural con menta y jengibre",
+                img: "https://picsum.photos/id/201/600/400"
+            }
+        ];
+
+        let cart = [];
+
+        function renderMenu(filteredItems = menuItems) {
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = '';
+            
+            filteredItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'menu-card bg-white rounded-3xl overflow-hidden shadow';
+                card.innerHTML = `
+                    <img src="${item.img}" class="w-full h-56 object-cover">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-semibold text-xl">${item.name}</h3>
+                            <span class="text-red-700 font-medium">$${item.price.toLocaleString()}</span>
+                        </div>
+                        <p class="text-stone-600 text-sm leading-relaxed mb-6">${item.desc}</p>
+                        <button onclick="addToCart(${item.id})" 
+                                class="w-full bg-stone-900 hover:bg-black text-white py-4 rounded-2xl text-sm font-medium transition-colors">
+                            Añadir al Pedido
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(btn) {
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const category = btn.dataset.category;
+            let filtered = menuItems;
+            
+            if (category !== 'all') {
+                filtered = menuItems.filter(item => item.category === category);
+            }
+            
+            renderMenu(filtered);
+        }
+
+        function addToCart(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+            
+            const existing = cart.find(cartItem => cartItem.id === id);
+            if (existing) {
+                existing.quantity = (existing.quantity || 1) + 1;
+            } else {
+                cart.push({...item, quantity: 1});
+            }
+            
+            updateCartCount();
+            showToast(`${item.name} añadido`);
+        }
+
+        function updateCartCount() {
+            const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            document.getElementById('cart-count').textContent = totalItems;
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = '';
+            
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-stone-400">
+                        <div class="text-6xl mb-4">🛒</div>
+                        <p class="text-xl">Tu carrito está vacío</p>
+                    </div>
+                `;
+                document.getElementById('cart-total').textContent = '$0';
+                return;
+            }
+            
+            let total = 0;
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * (item.quantity || 1);
+                total += itemTotal;
+                
+                const div = document.createElement('div');
+                div.className = 'flex gap-6 bg-white p-6 rounded-3xl';
+                div.innerHTML = `
+                    <img src="${item.img}" class="w-24 h-24 object-cover rounded-2xl">
+                    <div class="flex-1">
+                        <div class="flex justify-between">
+                            <h4 class="font-medium">${item.name}</h4>
+                            <span class="font-medium">$${(itemTotal).toLocaleString()}</span>
+                        </div>
+                        <p class="text-sm text-stone-500">${item.desc.substring(0, 80)}...</p>
+                        <div class="flex items-center gap-4 mt-4">
+                            <button onclick="changeQuantity(${index}, -1)" class="w-8 h-8 flex items-center justify-center border rounded-xl hover:bg-stone-100">-</button>
+                            <span class="font-medium w-6 text-center">${item.quantity || 1}</span>
+                            <button onclick="changeQuantity(${index}, 1)" class="w-8 h-8 flex items-center justify-center border rounded-xl hover:bg-stone-100">+</button>
+                            <button onclick="removeFromCart(${index})" class="ml-auto text-red-600 hover:text-red-700 text-sm">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('cart-total').textContent = `$${(total).toLocaleString()}`;
+        }
+
+        function changeQuantity(index, change) {
+            cart[index].quantity = Math.max(1, (cart[index].quantity || 1) + change);
+            renderCart();
+            updateCartCount();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+            updateCartCount();
+        }
+
+        function showSection(section) {
+            document.getElementById('menu-section').classList.add('hidden');
+            document.getElementById('cart-section').classList.add('hidden');
+            
+            if (section === 'menu') {
+                document.getElementById('menu-section').classList.remove('hidden');
+            } else if (section === 'cart') {
+                document.getElementById('cart-section').classList.remove('hidden');
+                renderCart();
+            }
+        }
+
+        function toggleCart() {
+            const menuSec = document.getElementById('menu-section');
+            const cartSec = document.getElementById('cart-section');
+            
+            if (!cartSec.classList.contains('hidden')) {
+                showSection('menu');
+            } else {
+                showSection('cart');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-24 right-8 bg-stone-900 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl';
+            toast.innerHTML = `
+                <i class="fa-solid fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2200);
+        }
+
+        function submitOrder() {
+            if (cart.length === 0) {
+                alert("Tu carrito está vacío");
+                return;
+            }
+            
+            // Save to localStorage for admin sync
+            localStorage.setItem('restaurantOrders', JSON.stringify([{
+                id: 'ORD-' + Date.now().toString().slice(-6),
+                table: document.getElementById('table-number').textContent,
+                items: cart,
+                total: cart.reduce((sum, i) => sum + i.price * (i.quantity||1), 0),
+                status: 'pending',
+                time: new Date().toLocaleTimeString('es-ES')
+            }]));
+            
+            alert(`¡Pedido enviado! Mesa ${document.getElementById('table-number').textContent}`);
+            cart = [];
+            updateCartCount();
+            renderCart();
+            showSection('menu');
+        }
+
+        // Initialize
+        window.onload = function() {
+            renderMenu();
+            updateCartCount();
+            
+            // Check for existing orders (demo sync)
+            if (!localStorage.getItem('restaurantMenu')) {
+                localStorage.setItem('restaurantMenu', JSON.stringify(menuItems));
+            } else {
+                menuItems = JSON.parse(localStorage.getItem('restaurantMenu'));
+                renderMenu();
+            }
+        };
+    </script>
+</body>
+</html>
