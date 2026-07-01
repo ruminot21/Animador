@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Delicia Restaurant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+    </style>
+</head>
+<body class="bg-stone-950 text-white">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-72 bg-stone-900 border-r border-stone-800 flex flex-col">
+            <div class="p-8 border-b border-stone-800">
+                <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 bg-red-700 rounded-2xl flex items-center justify-center text-3xl">🍷</div>
+                    <div>
+                        <h1 class="heading-font text-3xl font-bold">Delicia</h1>
+                        <p class="text-red-400 text-sm">Panel Administrativo</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-1 py-8 px-4">
+                <nav class="space-y-1">
+                    <a onclick="showAdminSection('orders')" class="admin-nav flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-stone-800 cursor-pointer active">
+                        <i class="fa-solid fa-receipt w-5"></i>
+                        <span>Pedidos en Vivo</span>
+                    </a>
+                    <a onclick="showAdminSection('menu')" class="admin-nav flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-stone-800 cursor-pointer">
+                        <i class="fa-solid fa-utensils w-5"></i>
+                        <span>Gestionar Carta</span>
+                    </a>
+                    <a onclick="showAdminSection('stats')" class="admin-nav flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-stone-800 cursor-pointer">
+                        <i class="fa-solid fa-chart-simple w-5"></i>
+                        <span>Estadísticas</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="p-6 border-t border-stone-800">
+                <button onclick="logout()" 
+                        class="w-full text-left px-6 py-4 text-red-400 hover:bg-stone-800 rounded-2xl flex items-center gap-3">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Top Bar -->
+            <div class="bg-stone-900 border-b border-stone-800 px-10 py-6 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <h2 id="section-title" class="heading-font text-3xl font-semibold">Pedidos en Vivo</h2>
+                </div>
+                <div class="flex items-center gap-8 text-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span class="text-emerald-400">En Línea</span>
+                    </div>
+                    <div class="text-stone-400">01 Jul 2026 • 10:24</div>
+                </div>
+            </div>
+
+            <!-- Orders Section -->
+            <div id="orders-section" class="p-10">
+                <div class="flex justify-between items-center mb-8">
+                    <div class="text-xl font-medium">Pedidos Recientes</div>
+                    <button onclick="refreshOrders()" 
+                            class="px-6 py-3 bg-stone-800 hover:bg-stone-700 rounded-2xl flex items-center gap-3">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Actualizar
+                    </button>
+                </div>
+                
+                <div id="orders-list" class="space-y-6">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Menu Management Section -->
+            <div id="menu-section" class="p-10 hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-2xl font-semibold">Gestión de la Carta</h3>
+                    <button onclick="showAddItemModal()" 
+                            class="bg-red-700 hover:bg-red-600 px-8 py-4 rounded-3xl flex items-center gap-3">
+                        <i class="fa-solid fa-plus"></i>
+                        Nuevo Plato
+                    </button>
+                </div>
+                
+                <div id="admin-menu-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div id="stats-section" class="p-10 hidden">
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-stone-900 rounded-3xl p-8">
+                        <div class="text-emerald-400 text-sm mb-2">HOY</div>
+                        <div class="text-6xl font-semibold mb-1">$487,200</div>
+                        <div class="text-stone-400">Ventas del día</div>
+                    </div>
+                    <div class="bg-stone-900 rounded-3xl p-8">
+                        <div class="text-emerald-400 text-sm mb-2">PEDIDOS</div>
+                        <div class="text-6xl font-semibold mb-1">14</div>
+                        <div class="text-stone-400">Completados</div>
+                    </div>
+                    <div class="bg-stone-900 rounded-3xl p-8">
+                        <div class="text-amber-400 text-sm mb-2">PENDIENTES</div>
+                        <div class="text-6xl font-semibold mb-1">3</div>
+                        <div class="text-stone-400">En cocina</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div id="item-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-stone-900 w-full max-w-lg mx-4 rounded-3xl overflow-hidden">
+            <div class="p-8">
+                <h3 id="modal-title" class="text-2xl font-semibold mb-8">Nuevo Item</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm text-stone-400 mb-2">Nombre del Plato</label>
+                        <input id="item-name" type="text" 
+                               class="w-full bg-stone-800 border border-stone-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-red-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-stone-400 mb-2">Categoría</label>
+                        <select id="item-category" 
+                                class="w-full bg-stone-800 border border-stone-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-red-700">
+                            <option value="entradas">Entradas</option>
+                            <option value="principales">Platos Principales</option>
+                            <option value="postres">Postres</option>
+                            <option value="bebidas">Bebidas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-stone-400 mb-2">Precio</label>
+                        <input id="item-price" type="number" 
+                               class="w-full bg-stone-800 border border-stone-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-red-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-stone-400 mb-2">Descripción</label>
+                        <textarea id="item-desc" rows="3"
+                                  class="w-full bg-stone-800 border border-stone-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-red-700"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-stone-400 mb-2">URL de Imagen</label>
+                        <input id="item-img" type="text" placeholder="https://..." 
+                               class="w-full bg-stone-800 border border-stone-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-red-700">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-stone-800 p-6 flex gap-4">
+                <button onclick="hideModal()" 
+                        class="flex-1 py-5 bg-stone-800 hover:bg-stone-700 rounded-2xl">Cancelar</button>
+                <button onclick="saveMenuItem()" 
+                        class="flex-1 py-5 bg-red-700 hover:bg-red-600 rounded-2xl">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let menuItems = [];
+        let orders = [];
+
+        function loadData() {
+            // Load from localStorage (shared with carta.html)
+            if (localStorage.getItem('restaurantMenu')) {
+                menuItems = JSON.parse(localStorage.getItem('restaurantMenu'));
+            } else {
+                menuItems = [
+                    {id:1,name:"Bruschetta Clásica",category:"entradas",price:8900,desc:"Pan tostado...",img:"https://picsum.photos/id/201/600/400"},
+                    {id:2,name:"Carpaccio de Res",category:"entradas",price:14900,desc:"Finas láminas...",img:"https://picsum.photos/id/292/600/400"},
+                ];
+                localStorage.setItem('restaurantMenu', JSON.stringify(menuItems));
+            }
+            
+            // Load orders
+            if (localStorage.getItem('restaurantOrders')) {
+                orders = JSON.parse(localStorage.getItem('restaurantOrders'));
+            }
+        }
+
+        function renderAdminMenu() {
+            const container = document.getElementById('admin-menu-grid');
+            container.innerHTML = '';
+            
+            menuItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-stone-900 rounded-3xl p-6 flex gap-6';
+                div.innerHTML = `
+                    <img src="${item.img}" class="w-28 h-28 object-cover rounded-2xl">
+                    <div class="flex-1">
+                        <div class="flex justify-between">
+                            <h4 class="font-medium">${item.name}</h4>
+                            <span class="text-red-400">$${(item.price).toLocaleString()}</span>
+                        </div>
+                        <p class="text-sm text-stone-400 mt-1">${item.category}</p>
+                        <p class="text-xs text-stone-500 line-clamp-2 mt-3">${item.desc}</p>
+                        
+                        <div class="mt-6 flex gap-3">
+                            <button onclick="editItem(${index})" 
+                                    class="flex-1 py-3 bg-stone-800 hover:bg-stone-700 rounded-2xl text-sm">Editar</button>
+                            <button onclick="deleteItem(${index})" 
+                                    class="flex-1 py-3 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-2xl text-sm">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-list');
+            container.innerHTML = '';
+            
+            if (orders.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-stone-500">No hay pedidos pendientes</div>`;
+                return;
+            }
+            
+            orders.forEach((order, i) => {
+                const total = order.total || order.items.reduce((sum, it) => sum + it.price * (it.quantity||1), 0);
+                
+                const div = document.createElement('div');
+                div.className = 'bg-stone-900 rounded-3xl p-8';
+                div.innerHTML = `
+                    <div class="flex justify-between mb-6">
+                        <div>
+                            <span class="text-emerald-400 font-mono">Mesa ${order.table}</span>
+                            <span class="ml-4 text-xs text-stone-500">${order.time}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-semibold">$${total.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                        ${order.items.map(item => `
+                            <div class="flex justify-between">
+                                <span>${item.name} ×${item.quantity||1}</span>
+                                <span>$${(item.price * (item.quantity||1)).toLocaleString()}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="mt-8 flex gap-4">
+                        <button onclick="updateOrderStatus(${i}, 'preparing')" 
+                                class="flex-1 py-4 bg-amber-600 hover:bg-amber-500 rounded-2xl">Preparando</button>
+                        <button onclick="completeOrder(${i})" 
+                                class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl">Completado</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateOrderStatus(index, status) {
+            orders[index].status = status;
+            localStorage.setItem('restaurantOrders', JSON.stringify(orders));
+            renderOrders();
+        }
+
+        function completeOrder(index) {
+            orders.splice(index, 1);
+            localStorage.setItem('restaurantOrders', JSON.stringify(orders));
+            renderOrders();
+        }
+
+        function showAdminSection(section) {
+            document.querySelectorAll('.admin-nav').forEach(el => el.classList.remove('active', 'bg-stone-800'));
+            
+            const sections = ['orders-section', 'menu-section', 'stats-section'];
+            sections.forEach(s => document.getElementById(s).classList.add('hidden'));
+            
+            if (section === 'orders') {
+                document.getElementById('orders-section').classList.remove('hidden');
+                document.getElementById('section-title').textContent = 'Pedidos en Vivo';
+            } else if (section === 'menu') {
+                document.getElementById('menu-section').classList.remove('hidden');
+                document.getElementById('section-title').textContent = 'Carta Digital';
+                renderAdminMenu();
+            } else if (section === 'stats') {
+                document.getElementById('stats-section').classList.remove('hidden');
+                document.getElementById('section-title').textContent = 'Estadísticas';
+            }
+        }
+
+        function showAddItemModal() {
+            document.getElementById('item-modal').classList.remove('hidden');
+            document.getElementById('modal-title').textContent = 'Nuevo Plato';
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-price').value = '';
+            document.getElementById('item-desc').value = '';
+            document.getElementById('item-img').value = '';
+            window.editingIndex = -1;
+        }
+
+        function hideModal() {
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        function saveMenuItem() {
+            const name = document.getElementById('item-name').value;
+            const category = document.getElementById('item-category').value;
+            const price = parseInt(document.getElementById('item-price').value);
+            const desc = document.getElementById('item-desc').value;
+            const img = document.getElementById('item-img').value || 'https://picsum.photos/id/1005/600/400';
+            
+            if (!name || !price) {
+                alert("Nombre y precio son obligatorios");
+                return;
+            }
+            
+            if (window.editingIndex >= 0) {
+                // Edit
+                menuItems[window.editingIndex] = {
+                    ...menuItems[window.editingIndex],
+                    name, category, price, desc, img
+                };
+            } else {
+                // Add new
+                menuItems.push({
+                    id: Date.now(),
+                    name,
+                    category,
+                    price,
+                    desc,
+                    img
+                });
+            }
+            
+            localStorage.setItem('restaurantMenu', JSON.stringify(menuItems));
+            hideModal();
+            renderAdminMenu();
+        }
+
+        function editItem(index) {
+            const item = menuItems[index];
+            document.getElementById('item-modal').classList.remove('hidden');
+            document.getElementById('modal-title').textContent = 'Editar Plato';
+            
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-category').value = item.category;
+            document.getElementById('item-price').value = item.price;
+            document.getElementById('item-desc').value = item.desc;
+            document.getElementById('item-img').value = item.img;
+            
+            window.editingIndex = index;
+        }
+
+        function deleteItem(index) {
+            if (confirm('¿Eliminar este plato?')) {
+                menuItems.splice(index, 1);
+                localStorage.setItem('restaurantMenu', JSON.stringify(menuItems));
+                renderAdminMenu();
+            }
+        }
+
+        function refreshOrders() {
+            loadData();
+            renderOrders();
+        }
+
+        function logout() {
+            if (confirm('¿Cerrar sesión?')) {
+                window.location.reload();
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            loadData();
+            renderOrders();
+            // Render menu in background
+            renderAdminMenu();
+        };
+
+        // Listen for changes from carta
+        window.addEventListener('storage', function() {
+            loadData();
+            renderOrders();
+            renderAdminMenu();
+        });
+    </script>
+</body>
+</html>
